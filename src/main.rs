@@ -1,136 +1,40 @@
-use std::time::*;
 use std::env::var;
-use tungstenite::{connect, Message};
-
-use notify_rust::Notification;
-
-use serde::{Deserialize, Serialize};
-use serde_json::Result;
+use std::process::Command;
+use std::str::from_utf8;
+use std::time::{Duration, Instant};
 
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
+
+use tungstenite::{connect, Message};
+
+use serde_json::Result;
+
+use notify_rust::Notification;
+
+mod generate_listen_message;
+
+use self::generate_listen_message::channel_points_reward_msg::listen_msg_structs::{ChannelPointsMsg, ChannelPointsRes};
+use generate_listen_message::generate_listen_msg;
 
 fn nonce() -> String {
     thread_rng().sample_iter(&Alphanumeric).take(18).collect()
 }
 
-#[derive(Serialize, Deserialize)]
-struct DataObj {
-    topics: Vec<String>,
-    auth_token: String,
-}
-
-#[derive(Serialize, Deserialize)]
-struct TopicListener {
-    #[serde(rename = "type")]
-    event: String,
-    nonce: String,
-    data: DataObj,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ChannelPointsRewardMaxPerStream {
-    is_enabled: bool,
-    max_per_stream: i16,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ChannelPointsRewardImage {
-    url_1x: String,
-    url_2x: String,
-    url_4x: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ChannelPointsRewardDefaultImage {
-    url_1x: String,
-    url_2x: String,
-    url_4x: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ChannelPointsRedemptionUser {
-    id: String,
-    login: String,
-    display_name: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ChannelPointsRedemptionReward {
-    channel_id: String,
-    title: String,
-    prompt: String,
-    cost: i16,
-    is_user_input_required: bool,
-    is_sub_only: bool,
-    default_image: ChannelPointsRewardDefaultImage,
-    background_color: String,
-    is_enabled: bool,
-    is_paused: bool,
-    is_in_stock: bool,
-    max_per_stream: ChannelPointsRewardMaxPerStream,
-    should_redemptions_skip_request_queue: bool,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ChannelPointsRedemption {
-    id: String,
-    user: ChannelPointsRedemptionUser,
-    channel_id: String,
-    redeemed_at: String,
-    reward: ChannelPointsRedemptionReward,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    user_input: Option<String>,
-    status: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ChannelPointsMsgData {
-    timestamp: String,
-    redemption: ChannelPointsRedemption,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ChannelPointsMsg {
-    #[serde(rename = "type")]
-    event: String,
-    data: ChannelPointsMsgData,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ChannelPointsMetaMsg {
-    topic: String,
-    message: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-struct ChannelPointsRes {
-    #[serde(rename = "type")]
-    event: String,
-    data: ChannelPointsMetaMsg,
-}
-
 fn main() -> Result<()> {
     env_logger::init();
+    let test = Command::new("sh")
+        .arg("-c")
+        .arg("echo hello")
+        .output()
+        .expect("failed to execute process");
+
+    println!("{:?}", from_utf8(&test.stdout).unwrap().trim());
 
     const WS_URL: &'static str = "wss://pubsub-edge.twitch.tv";
-    // TODO: Read from ENV, use soft-coded values
+
     let channel_id = var("T_CHANNEL_ID").expect("Twitch channel id not found");
     let twitch_auth_token = var("T_AUTH_TOKEN").expect("Twitch auth token not found");
-    
-    let nonce_str = nonce();
-
-    let listen_msg = TopicListener {
-        event: "LISTEN".to_string(),
-        nonce: nonce_str,
-        data: DataObj {
-            topics: vec![
-                format!("channel-points-channel-v1.{}", &channel_id),
-                format!("following.{}", &channel_id),
-            ],
-            auth_token: twitch_auth_token,
-        },
-    };
 
     let (mut socket, _response) = connect(WS_URL).unwrap();
 
@@ -141,24 +45,28 @@ fn main() -> Result<()> {
     // During this time, we recommend that clients reconnect to the server; otherwise, the client will be forcibly disconnected.
     let mut last_ping = Instant::now();
     let mut expected_pong = None;
-    
+
     // If a client does not receive a PONG message within 10 seconds of issuing a PING command, it should reconnect to the server.
     let pong_timeout = Duration::from_secs(15);
 
+    // Generate Listen Message
     let listen_msg_str =
-        serde_json::to_string(&listen_msg).expect("Failed to serialize listen msg");
+        serde_json::to_string(&generate_listen_msg(nonce(), channel_id, twitch_auth_token))
+            .expect("Failed to serialize listen msg");
 
-    // Start List msg
+    // Start web socket
     socket.write_message(Message::Text(listen_msg_str)).unwrap();
 
+    // Wait a bit before doing stuff
+    // I.e, the web socket needs to connect etc.
     std::thread::sleep(Duration::from_millis(20));
 
-    // Tear apart socket
+    // 1. Tear apart socket
+    // 2. Set to non-blocking
     match socket.get_ref() {
         tungstenite::stream::Stream::Plain(s) => s,
         tungstenite::stream::Stream::Tls(s) => s.get_ref(),
     }
-    // Set to non-blocking
     .set_nonblocking(true)
     .unwrap();
 
@@ -188,9 +96,19 @@ fn main() -> Result<()> {
                     let redemption_msg: ChannelPointsMsg =
                         serde_json::from_str(&redemption_meta_msg.data.message.to_string())?;
 
-                    if redemption_msg.data.redemption.reward.title.contains("Hydrate!"){
+                    if redemption_msg
+                        .data
+                        .redemption
+                        .reward
+                        .title
+                        .contains("Hydrate!")
+                    {
                         // Send notification for hydration events
-                        Notification::new().summary(&redemption_msg.data.redemption.reward.title).body(&redemption_msg.data.redemption.reward.prompt).show().unwrap();
+                        Notification::new()
+                            .summary(&redemption_msg.data.redemption.reward.title)
+                            .body(&redemption_msg.data.redemption.reward.prompt)
+                            .show()
+                            .unwrap();
                     };
 
                     println!("{:?}", redemption_msg);
