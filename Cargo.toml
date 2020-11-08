@@ -1,0 +1,16 @@
+[package]
+name = "twitch-discord-bot"
+version = "0.1.0"
+authors = ["Mathias Wøbbe <mathias@kandelborg.dk>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tungstenite = "0.11.1"
+env_logger = "0.8.1"
+url = "2.2.0"
+rand = "0.7.3"
+serde = { version = "1.0.117", features = ["derive"] }
+serde_json = "1.0.59"
+notify-rust = "4.0.0"
