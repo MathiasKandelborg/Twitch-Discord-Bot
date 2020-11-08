@@ -29,9 +29,9 @@ fn nonce() -> String {
 
 fn check_ping(
     pong_timeout: Duration,
-    last_ping: Instant,
-    expected_pong: Option<Instant>,
-    socket: WebSocket<Stream<TcpStream, TlsStream<TcpStream>>>,
+    last_ping: &mut Instant,
+    expected_pong: &mut Option<Instant>,
+    socket: &mut WebSocket<Stream<TcpStream, TlsStream<TcpStream>>>,
 ) -> std::result::Result<String, String> {
     if last_ping.elapsed() > Duration::from_secs(1 * 60) {
         socket
@@ -39,8 +39,8 @@ fn check_ping(
             .unwrap();
 
         println!("Sending PING");
-        expected_pong = Some(Instant::now());
-        last_ping = Instant::now();
+        *expected_pong =  Some(Instant::now());
+        *last_ping =  Instant::now();
     }
 
     // Thanks to `museun` for making this
@@ -53,7 +53,7 @@ fn check_ping(
             Ok("Recived PONG".to_string())
         }
     } else {
-        Ok("Fell through".to_string())
+        Ok("".to_string())
     }
 }
 
@@ -159,9 +159,9 @@ fn main() -> Result<()> {
         // Thanks to `museun` for making this
         // Every minute send a ping to the socket
         // Twitch is special so we send a Text containing PING
-        match check_ping(pong_timeout, last_ping, expected_pong, socket) {
+        match check_ping(pong_timeout, &mut last_ping, &mut expected_pong, &mut socket) {
             Ok(msg) => {
-                println!("{}", msg);
+               // println!("{}", msg);
             }
             Err(err) => {
                 println!("ERROR: {}", err);
