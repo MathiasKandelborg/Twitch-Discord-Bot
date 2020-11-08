@@ -1,12 +1,15 @@
+use native_tls::TlsStream;
 use std::env::var;
+use std::net::TcpStream;
 use std::process::Command;
 use std::str::from_utf8;
 use std::time::{Duration, Instant};
+use tungstenite::stream::Stream;
 
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 
-use tungstenite::{connect, Message};
+use tungstenite::{connect, Message, WebSocket};
 
 use serde_json::Result;
 
@@ -17,10 +20,41 @@ mod generate_listen_message;
 use self::generate_listen_message::channel_points_reward_msg::listen_msg_structs::{
     ChannelPointsMsg, ChannelPointsRes,
 };
+
 use generate_listen_message::generate_listen_msg;
 
 fn nonce() -> String {
     thread_rng().sample_iter(&Alphanumeric).take(18).collect()
+}
+
+fn check_ping(
+    pong_timeout: Duration,
+    last_ping: Instant,
+    expected_pong: Option<Instant>,
+    socket: WebSocket<Stream<TcpStream, TlsStream<TcpStream>>>,
+) -> std::result::Result<String, String> {
+    if last_ping.elapsed() > Duration::from_secs(1 * 60) {
+        socket
+            .write_message(Message::Text(r#"{"type": "PING"}"#.to_string()))
+            .unwrap();
+
+        println!("Sending PING");
+        expected_pong = Some(Instant::now());
+        last_ping = Instant::now();
+    }
+
+    // Thanks to `museun` for making this
+    // If pong timed out, stop listening and break the loop
+    if let Some(dt) = expected_pong {
+        if dt.elapsed() > pong_timeout {
+            println!("PONG timed out");
+            Err("PONG Timed out".to_string())
+        } else {
+            Ok("Recived PONG".to_string())
+        }
+    } else {
+        Ok("Fell through".to_string())
+    }
 }
 
 fn main() -> Result<()> {
@@ -93,10 +127,12 @@ fn main() -> Result<()> {
 
                 // Channel Redemption msg
                 if res.contains("data") {
-                    let redemption_meta_msg: ChannelPointsRes = serde_json::from_str(&res.trim())?;
+                    let redemption_meta_msg: ChannelPointsRes = serde_json::from_str(&res.trim())
+                        .expect("Could not deserialize Channel Points meta message");
                     // Channel point redemption msg
                     let redemption_msg: ChannelPointsMsg =
-                        serde_json::from_str(&redemption_meta_msg.data.message.to_string())?;
+                        serde_json::from_str(&redemption_meta_msg.data.message.to_string())
+                            .expect("Could not deserialize Channel Points data message");
 
                     if redemption_msg
                         .data
@@ -120,30 +156,21 @@ fn main() -> Result<()> {
                 // Other things Twitch doesn't do
             }
         }
-
         // Thanks to `museun` for making this
         // Every minute send a ping to the socket
         // Twitch is special so we send a Text containing PING
-        if last_ping.elapsed() > Duration::from_secs(1 * 60) {
-            socket
-                .write_message(Message::Text(r#"{"type": "PING"}"#.to_string()))
-                .unwrap();
-
-            println!("Sending PING");
-            expected_pong = Some(Instant::now());
-            last_ping = Instant::now();
-        }
-
-        // Thanks to `museun` for making this
-        // If pong timed out, stop listening and break the loop
-        if let Some(dt) = expected_pong {
-            if dt.elapsed() > pong_timeout {
-                println!("PONG timed out");
+        match check_ping(pong_timeout, last_ping, expected_pong, socket) {
+            Ok(msg) => {
+                println!("{}", msg);
+            }
+            Err(err) => {
+                println!("ERROR: {}", err);
                 break;
             }
-        }
-
-        std::thread::sleep(Duration::from_millis(60));
+        };
     }
+
+    std::thread::sleep(Duration::from_millis(60));
+
     Ok(())
 }

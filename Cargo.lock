@@ -839,6 +839,7 @@ name = "twitch-discord-bot"
 version = "0.1.0"
 dependencies = [
  "env_logger",
+ "native-tls",
  "notify-rust",
  "rand",
  "serde",
