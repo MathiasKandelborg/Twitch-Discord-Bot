@@ -14,7 +14,9 @@ use notify_rust::Notification;
 
 mod generate_listen_message;
 
-use self::generate_listen_message::channel_points_reward_msg::listen_msg_structs::{ChannelPointsMsg, ChannelPointsRes};
+use self::generate_listen_message::channel_points_reward_msg::listen_msg_structs::{
+    ChannelPointsMsg, ChannelPointsRes,
+};
 use generate_listen_message::generate_listen_msg;
 
 fn nonce() -> String {
