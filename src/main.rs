@@ -6,26 +6,14 @@ use std::str::from_utf8;
 use std::time::{Duration, Instant};
 use tungstenite::stream::Stream;
 
-use rand::distributions::Alphanumeric;
-use rand::{thread_rng, Rng};
-
 use tungstenite::{connect, Message, WebSocket};
 
 use serde_json::Result;
 
 use notify_rust::Notification;
 
-mod generate_listen_message;
-
-use self::generate_listen_message::channel_points_reward_msg::listen_msg_structs::{
-    ChannelPointsMsg, ChannelPointsRes,
-};
-
-use generate_listen_message::generate_listen_msg;
-
-fn nonce() -> String {
-    thread_rng().sample_iter(&Alphanumeric).take(18).collect()
-}
+use common_structs::{ChannelPointsMsg, ChannelPointsRes};
+use twitch_discord_bot::{common_structs, generate_listen_msg, nonce};
 
 fn check_ping(
     pong_timeout: Duration,
@@ -39,8 +27,8 @@ fn check_ping(
             .unwrap();
 
         println!("Sending PING");
-        *expected_pong =  Some(Instant::now());
-        *last_ping =  Instant::now();
+        *expected_pong = Some(Instant::now());
+        *last_ping = Instant::now();
     }
 
     // Thanks to `museun` for making this
@@ -59,13 +47,7 @@ fn check_ping(
 
 fn main() -> Result<()> {
     env_logger::init();
-    let test = Command::new("sh")
-        .arg("-c")
-        .arg("echo hello")
-        .output()
-        .expect("failed to execute process");
 
-    println!("{:?}", from_utf8(&test.stdout).unwrap().trim());
 
     const WS_URL: &'static str = "wss://pubsub-edge.twitch.tv";
 
@@ -149,6 +131,29 @@ fn main() -> Result<()> {
                             .unwrap();
                     };
 
+                    if redemption_msg
+                        .data
+                        .redemption
+                        .reward
+                        .title
+                        .contains("Initiate")
+                    {
+                        Notification::new()
+                            .summary(&redemption_msg.data.redemption.reward.title)
+                            .body(&redemption_msg.data.redemption.reward.prompt)
+                            .show()
+                            .unwrap();
+
+                        Command::new("zsh")
+                            .arg("-c")
+                            .arg("cool_retro_term")
+                            .output()
+                            .expect("failed to execute process");
+                        
+                        
+
+                    }
+
                     println!("{:?}", redemption_msg);
                 }
             }
@@ -159,9 +164,14 @@ fn main() -> Result<()> {
         // Thanks to `museun` for making this
         // Every minute send a ping to the socket
         // Twitch is special so we send a Text containing PING
-        match check_ping(pong_timeout, &mut last_ping, &mut expected_pong, &mut socket) {
+        match check_ping(
+            pong_timeout,
+            &mut last_ping,
+            &mut expected_pong,
+            &mut socket,
+        ) {
             Ok(msg) => {
-               // println!("{}", msg);
+                // println!("{}", msg);
             }
             Err(err) => {
                 println!("ERROR: {}", err);

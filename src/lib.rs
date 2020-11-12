@@ -1,6 +1,14 @@
-pub mod channel_points_reward_msg;
-pub use channel_points_reward_msg::listen_msg_structs::{TopicListener,DataObj};
+pub mod common_structs;
+use crate::common_structs::{DataObj, TopicListener};
 
+
+
+use rand::distributions::Alphanumeric;
+use rand::{thread_rng, Rng};
+
+pub fn nonce() -> String {
+    thread_rng().sample_iter(&Alphanumeric).take(18).collect()
+}
 
 pub fn generate_listen_msg(
     nonce: String,
@@ -18,6 +26,4 @@ pub fn generate_listen_msg(
             auth_token: twitch_auth_token,
         },
     }
-
-    // Return the structured listen message
 }
