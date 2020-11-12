@@ -7,7 +7,7 @@ pub mod channel_points {
     #[derive(Serialize, Deserialize, Debug)]
     pub struct ChannelPointsRewardMaxPerStream {
         pub is_enabled: bool,
-        pub max_per_stream: i16,
+        pub max_per_stream: u32,
     }
 
     #[derive(Serialize, Deserialize, Debug)]
@@ -36,7 +36,7 @@ pub mod channel_points {
         channel_id: String,
         pub title: String,
         pub prompt: String,
-        pub cost: i16,
+        pub cost: i32,
         pub is_user_input_required: bool,
         pub is_sub_only: bool,
         pub default_image: ChannelPointsRewardDefaultImage,

@@ -1,53 +1,18 @@
-use native_tls::TlsStream;
 use std::env::var;
-use std::net::TcpStream;
-use std::process::Command;
-use std::str::from_utf8;
 use std::time::{Duration, Instant};
-use tungstenite::stream::Stream;
 
-use tungstenite::{connect, Message, WebSocket};
+use tungstenite::{connect, Message};
 
 use serde_json::Result;
 
-use notify_rust::Notification;
-
-use common_structs::{ChannelPointsMsg, ChannelPointsRes};
-use twitch_discord_bot::{common_structs, generate_listen_msg, nonce};
-
-fn check_ping(
-    pong_timeout: Duration,
-    last_ping: &mut Instant,
-    expected_pong: &mut Option<Instant>,
-    socket: &mut WebSocket<Stream<TcpStream, TlsStream<TcpStream>>>,
-) -> std::result::Result<String, String> {
-    if last_ping.elapsed() > Duration::from_secs(1 * 60) {
-        socket
-            .write_message(Message::Text(r#"{"type": "PING"}"#.to_string()))
-            .unwrap();
-
-        println!("Sending PING");
-        *expected_pong = Some(Instant::now());
-        *last_ping = Instant::now();
-    }
-
-    // Thanks to `museun` for making this
-    // If pong timed out, stop listening and break the loop
-    if let Some(dt) = expected_pong {
-        if dt.elapsed() > pong_timeout {
-            println!("PONG timed out");
-            Err("PONG Timed out".to_string())
-        } else {
-            Ok("Recived PONG".to_string())
-        }
-    } else {
-        Ok("".to_string())
-    }
-}
+use channel_points_redemption::channel_points_redemption;
+use common_structs::ChannelPointsRes;
+use twitch_discord_bot::{
+    channel_points_redemption, check_ping, common_structs, generate_listen_msg, nonce,
+};
 
 fn main() -> Result<()> {
     env_logger::init();
-
 
     const WS_URL: &'static str = "wss://pubsub-edge.twitch.tv";
 
@@ -68,9 +33,12 @@ fn main() -> Result<()> {
     let pong_timeout = Duration::from_secs(15);
 
     // Generate Listen Message
-    let listen_msg_str =
-        serde_json::to_string(&generate_listen_msg(nonce(), channel_id, twitch_auth_token))
-            .expect("Failed to serialize listen msg");
+    let listen_msg_str = serde_json::to_string(&generate_listen_msg(
+        nonce(),
+        channel_id.to_string(),
+        twitch_auth_token,
+    ))
+    .expect("Failed to serialize listen msg");
 
     // Start web socket
     socket.write_message(Message::Text(listen_msg_str)).unwrap();
@@ -96,81 +64,43 @@ fn main() -> Result<()> {
             {
                 // we're blocking
             }
-            // Panic for no reason because we're handling errors properly
             Err(err) => panic!(err),
             Ok(Message::Text(res)) => {
-                // Playing ping pong (this is the pong part)
                 if res.contains("PONG") {
                     expected_pong = None;
                     println!("Recived PONG!");
                 }
 
-                // Look at topic messages!
+                // println!("{:?}", res); // for debugging
 
-                // Channel Redemption msg
                 if res.contains("data") {
-                    let redemption_meta_msg: ChannelPointsRes = serde_json::from_str(&res.trim())
-                        .expect("Could not deserialize Channel Points meta message");
-                    // Channel point redemption msg
-                    let redemption_msg: ChannelPointsMsg =
-                        serde_json::from_str(&redemption_meta_msg.data.message.to_string())
-                            .expect("Could not deserialize Channel Points data message");
+                    let res_msg: ChannelPointsRes =
+                        serde_json::from_str(res.trim())
+                        .expect("Could not deserialize meta msg");
 
-                    if redemption_msg
-                        .data
-                        .redemption
-                        .reward
-                        .title
-                        .contains("Hydrate!")
-                    {
-                        // Send notification for hydration events
-                        Notification::new()
-                            .summary(&redemption_msg.data.redemption.reward.title)
-                            .body(&redemption_msg.data.redemption.reward.prompt)
-                            .show()
-                            .unwrap();
-                    };
-
-                    if redemption_msg
-                        .data
-                        .redemption
-                        .reward
-                        .title
-                        .contains("Initiate")
-                    {
-                        Notification::new()
-                            .summary(&redemption_msg.data.redemption.reward.title)
-                            .body(&redemption_msg.data.redemption.reward.prompt)
-                            .show()
-                            .unwrap();
-
-                        Command::new("zsh")
-                            .arg("-c")
-                            .arg("cool_retro_term")
-                            .output()
-                            .expect("failed to execute process");
-                        
-                        
-
+                    match res_msg.data.topic.as_str() {
+                        "channel-points-channel-v1.268365847" => {
+                            channel_points_redemption(res_msg);
+                        }
+                        "following.268365847" => {
+                            println!("Follow recognized");
+                        }
+                        _ => println!("Topic listener not covered"),
                     }
-
-                    println!("{:?}", redemption_msg);
                 }
             }
             Ok(..) => {
                 // Other things Twitch doesn't do
             }
         }
-        // Thanks to `museun` for making this
-        // Every minute send a ping to the socket
-        // Twitch is special so we send a Text containing PING
+
         match check_ping(
             pong_timeout,
             &mut last_ping,
             &mut expected_pong,
             &mut socket,
         ) {
-            Ok(msg) => {
+            Ok(_msg) => {
                 // println!("{}", msg);
             }
             Err(err) => {
