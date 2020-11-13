@@ -8,7 +8,7 @@ use std::process::Command;
 
 use crate::common_structs::{ChannelPointsRes, ChannelPointsMsg};
 
-pub fn channel_points_redemption(res_msg: ChannelPointsRes) {
+pub fn channel_points_redemption(res_msg: &ChannelPointsRes) {
     let redemption_msg: ChannelPointsMsg = serde_json::from_str(&res_msg.data.message.to_string())
         .expect("Could not deserialize Channel Points data message");
 

@@ -75,17 +75,20 @@ fn main() -> Result<()> {
 
                 if res.contains("data") {
                     let res_msg: ChannelPointsRes =
-                        serde_json::from_str(res.trim())
-                        .expect("Could not deserialize meta msg");
+                        serde_json::from_str(res.trim()).expect("Could not deserialize meta msg");
+                    
+                    let topic_str = &res_msg.data.topic;
+                    let channel_points_topic = format!("channel-points-channel-v1.{}", &channel_id);
 
-                    match res_msg.data.topic.as_str() {
-                        "channel-points-channel-v1.268365847" => {
-                            channel_points_redemption(res_msg);
-                        }
-                        "following.268365847" => {
-                            println!("Follow recognized");
-                        }
-                        _ => println!("Topic listener not covered"),
+                    let channel_follower_topic = format!("following.{}", &channel_id);
+                    
+
+                    if topic_str.contains(channel_points_topic.as_str()) {
+                        channel_points_redemption(&res_msg);
+                    } else if topic_str.contains(channel_follower_topic.as_str()) {
+                        println!("Follower topic caught");
+                    } else {
+                        println!("Did topic string");
                     }
                 }
             }
