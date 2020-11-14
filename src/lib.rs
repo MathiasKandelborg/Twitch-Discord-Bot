@@ -2,6 +2,9 @@ pub mod common_structs;
 use crate::common_structs::{DataObj, TopicListener};
 
 pub mod channel_points_redemption;
+pub mod new_follower;
+pub mod parse_twitch_msg;
+use crate::parse_twitch_msg::TwitchChatMsg;
 
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};

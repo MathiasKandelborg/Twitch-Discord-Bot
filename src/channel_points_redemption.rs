@@ -12,6 +12,7 @@ pub fn channel_points_redemption(res_msg: &ChannelPointsRes) {
     let redemption_msg: ChannelPointsMsg = serde_json::from_str(&res_msg.data.message.to_string())
         .expect("Could not deserialize Channel Points data message");
 
+    println!("testubg");
     let redemption_title = &redemption_msg.data.redemption.reward.title;
 
     if redemption_title.contains("Hydrate!") {
