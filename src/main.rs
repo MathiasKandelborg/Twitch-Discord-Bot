@@ -1,37 +1,52 @@
+#![deny(rust_2018_idioms, clippy::all, clippy::pedantic)]
+#![warn(clippy::nursery)]
+use config::{Config, File};
+
+use serde_json::{to_string, Result};
+
 use std::env::var;
 use std::time::{Duration, Instant};
-
 use tungstenite::{connect, Message};
 
-use serde_json::Result;
-
+// Crate files
 use channel_points_redemption::channel_points_redemption;
-use common_structs::ChannelPointsRes;
+use common_structs::Res;
 use new_follower::new_follower;
 use parse_twitch_msg::parse_twitch_msg;
+use twitch_chat_connect::twitch_chat_connect_messages;
 use twitch_discord_bot::{
-    channel_points_redemption, check_ping, common_structs, generate_listen_msg, new_follower,
-    nonce, parse_twitch_msg,
+    channel_points_redemption, chat_command, check_ping, common_structs, generate_listen_msg,
+    new_follower, nonce, parse_twitch_msg, twitch_chat_connect,
 };
 
 fn main() -> Result<()> {
     env_logger::init();
 
+    let mut settings = Config::default();
+    let mut commands = Config::default();
+
+    settings
+        .merge(File::with_name("config"))
+        .expect("Couldn't read or find configuration file");
+
+    commands
+        .merge(File::with_name("commands"))
+        .expect("Couldn't read or find commands file");
+
     const WS_URL: &'static str = "wss://pubsub-edge.twitch.tv";
     const WS_TWITCH_CHAT: &'static str = "wss://irc-ws.chat.twitch.tv:443";
 
+    // TODO: Use env variables in settings obj
     let channel_id = var("T_CHANNEL_ID").expect("Twitch channel id not found");
     let twitch_auth_token = var("T_AUTH_TOKEN").expect("Twitch auth token not found");
     let twitch_oauth_token = var("T_OAUTH_TOKEN").expect("Twitch chat token not found");
 
-    let (mut chat_socket, _chat_response) = connect(WS_TWITCH_CHAT).unwrap();
-    let (mut socket, _response) = connect(WS_URL).unwrap();
+    // Create a websocket for twitch PubSub
+    let (mut ws_twitch, _response) = connect(WS_URL).unwrap();
+    // Create a websocket for Twitch chat
+    let (mut ws_twitch_chat, _chat_response) = connect(WS_TWITCH_CHAT).unwrap();
 
-    // To keep the server from closing the connection, clients must send a PING command at least once every 5 minutes.
-    // Clients must LISTEN on at least one topic within 15 seconds of establishing the connection, or they will be disconnected by the server.
-    // Clients may receive a RECONNECT message at any time.
-    // This indicates that the server is about to restart (typically for maintenance) and will disconnect the client within 30 seconds.
-    // During this time, we recommend that clients reconnect to the server; otherwise, the client will be forcibly disconnected.
+
     let mut last_ping = Instant::now();
     let mut expected_pong = None;
 
@@ -39,96 +54,62 @@ fn main() -> Result<()> {
     let pong_timeout = Duration::from_secs(15);
 
     // Generate Listen Message
-    let listen_msg_str = serde_json::to_string(&generate_listen_msg(
+    let listen_msg_str = to_string(&generate_listen_msg(
         nonce(),
         channel_id.to_string(),
         twitch_auth_token,
     ))
     .expect("Failed to serialize listen msg");
 
-    chat_socket
-        .write_message(Message::Text(
-            "CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership".to_string(),
-        ))
-        .unwrap();
-    chat_socket
-        .write_message(Message::Text(format!("PASS {}", &twitch_oauth_token)))
-        .unwrap();
+    std::thread::sleep(Duration::from_millis(200));
+    // Write connect messages to twitch chat ws
+    twitch_chat_connect_messages(&mut ws_twitch_chat, &twitch_oauth_token);
 
-    chat_socket
-        .write_message(Message::Text(format!("NICK TDBOT")))
-        .unwrap();
+    // 1. Tear socket apart
+    // 2. Set to non-blocking
+    match ws_twitch.get_ref() {
+        tungstenite::stream::Stream::Plain(s) => s,
+        tungstenite::stream::Stream::Tls(s) => s.get_ref(),
+    }
+    .set_nonblocking(true)
+    .unwrap();
 
-    chat_socket
-        .write_message(Message::Text(format!("JOIN #neonraytracer")))
-        .unwrap();
+    // Same as above TODO: abstract this
+    match ws_twitch_chat.get_ref() {
+        tungstenite::stream::Stream::Plain(s) => s,
+        tungstenite::stream::Stream::Tls(s) => s.get_ref(),
+    }
+    .set_nonblocking(true)
+    .unwrap();
 
     // Start web socket
-    socket.write_message(Message::Text(listen_msg_str)).unwrap();
+    ws_twitch
+        .write_message(Message::Text(listen_msg_str))
+        .unwrap();
 
-    match chat_socket.get_ref() {
-        tungstenite::stream::Stream::Plain(s) => s,
-        tungstenite::stream::Stream::Tls(s) => s.get_ref(),
-    }
-    .set_nonblocking(true)
-    .unwrap();
     // Wait a bit before doing stuff
-    // I.e, the web socket needs to connect etc.
-    std::thread::sleep(Duration::from_millis(20));
+    // I.e, the web sockets needs to connect
+    std::thread::sleep(Duration::from_millis(200));
 
-    // 1. Tear apart socket
-    // 2. Set to non-blocking
-    match socket.get_ref() {
-        tungstenite::stream::Stream::Plain(s) => s,
-        tungstenite::stream::Stream::Tls(s) => s.get_ref(),
-    }
-    .set_nonblocking(true)
-    .unwrap();
-
-    // Main loop
     loop {
-        // Twitch chat
-        match chat_socket.read_message() {
-            Err(tungstenite::error::Error::Io(err))
-                if err.kind() == std::io::ErrorKind::WouldBlock =>
-            {
-                // we're blocking
-            }
-            Err(err) => panic!(err),
-
-            Ok(Message::Text(res)) => {
-               //  println!("{}", res.as_str());
-
-                match parse_twitch_msg(res) {
-                    Some(msg) => println!(
-                        "{}",
-                        format!(
-                            "user {} channnel_name {} message \n{}",
-                            msg.display_name, msg.channel_name, msg.message
-                        )
-                    ),
-                    None => {}
-                };
-            }
-            Ok(..) => {}
-        }
-
         // Twitch websockets
-        match socket.read_message() {
+        match ws_twitch.read_message() {
             Err(tungstenite::error::Error::Io(err))
                 if err.kind() == std::io::ErrorKind::WouldBlock =>
             {
+                // it's a faaaaaake
                 // we're blocking
             }
-            Err(err) => panic!(err),
+            Err(err) => println!("{}", err),
             Ok(Message::Text(res)) => {
                 if res.contains("PONG") {
                     expected_pong = None;
-                    println!("Recived PONG!");
+
+                    // println!("Recived PONG!");
                 }
 
                 if res.contains("data") {
-                    let res_msg: ChannelPointsRes =
+                    let res_msg: Res =
                         serde_json::from_str(res.trim()).expect("Could not deserialize meta msg");
                     // println!("{:#?}", &res_msg); // for debugging
                     let topic_str = &res_msg.data.topic;
@@ -143,14 +124,47 @@ fn main() -> Result<()> {
             }
             Ok(..) => {
                 // Other things Twitch doesn't do
+                // println!("{:#?}", test);
             }
+        }
+
+        match ws_twitch_chat.read_message() {
+            Err(tungstenite::error::Error::Io(err))
+                if err.kind() == std::io::ErrorKind::WouldBlock =>
+            {
+                // we're blocking
+                // it's a faaaaaake
+            }
+            Err(err) => panic!(err),
+
+            Ok(Message::Text(res)) => {
+                // println!("{}", res.as_str()); // For debugging
+
+                match parse_twitch_msg(res) {
+                    Some(msg) => {
+                        println!(
+                            "\nUser \"{}\"\nIn {}'s channel\nWrote: \"{}\"",
+                            msg.display_name,
+                            msg.channel_name,
+                            msg.message.trim()
+                        );
+                        chat_command::chat_commands::cmd_response(
+                            msg,
+                            &mut ws_twitch_chat,
+                            &commands,
+                        );
+                    }
+                    None => {}
+                };
+            }
+            Ok(..) => {}
         }
 
         match check_ping(
             pong_timeout,
             &mut last_ping,
             &mut expected_pong,
-            &mut socket,
+            &mut ws_twitch,
         ) {
             Ok(_msg) => {
                 // println!("{}", msg);
@@ -160,12 +174,12 @@ fn main() -> Result<()> {
                 break;
             }
         };
+
         // MAKE SURE THIS IS IN THE MAIN LOOP
         // YOUR PROCESSOR WILL GO BRRRRRRRRRRRRRRRRRR OTHERWISE
-        std::thread::sleep(Duration::from_millis(60));
-        // 👇 this is the end of the main loop
+        std::thread::sleep(Duration::from_millis(12));
+        // 👇 main loop ends
     }
 
-    drop(socket);
     Ok(())
 }

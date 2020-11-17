@@ -19,3 +19,4 @@ pub mod ws_structs {
         pub data: DataObj,
     }
 }
+

@@ -8,7 +8,7 @@ use notify_rust::Notification;
 
 use std::process::Command;
 
-use crate::common_structs::{ChannelPointsRes, ChannelPointsMetaMsg};
+use crate::common_structs::{Res, MetaMsg};
 
 #[derive(Deserialize, Serialize)]
 struct NewFollower {
@@ -17,14 +17,14 @@ struct NewFollower {
     user_id: String
 }
 
-pub fn new_follower(res_msg: &ChannelPointsRes) {
+pub fn new_follower(res_msg: &Res) {
     let new_follower: NewFollower = serde_json::from_str(res_msg.data.message.as_str()).expect("No json");
 
     println!("{}", serde_json::to_string(&new_follower).expect(""));
 
-// ChannelPointsRes {
+// Res {
 //    event: "MESSAGE",
-//    data: ChannelPointsMetaMsg {
+//    data: MetaMsg {
 //        topic: "following.268365847",
 //        message: "{\"display_name\":\"mathiaskandelborg\",\"username\":\"mathiaskandelborg\",\"u
 //ser_id\":\"589623537\"}",

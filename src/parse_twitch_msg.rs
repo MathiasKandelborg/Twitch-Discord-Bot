@@ -1,13 +1,14 @@
+// Courtesy of Togglebit, the parser master!
+
 pub struct TwitchChatMsg {
-   pub display_name: String,
-   pub channel_name: String,
-   pub message: String,
+    pub display_name: String,
+    pub channel_name: String,
+    pub message: String,
 }
 
 // Takes pre-parsed WS Text::Message from twitch chat
 pub fn parse_twitch_msg(chat_msg: String) -> Option<TwitchChatMsg> {
     if chat_msg.contains("PRIVMSG") {
-    
         // Parse tags
         let tag_idx = chat_msg.to_string().find(" :").unwrap();
         let tag_arr = chat_msg.to_owned().drain(..tag_idx + 1).collect::<String>();
@@ -16,7 +17,6 @@ pub fn parse_twitch_msg(chat_msg: String) -> Option<TwitchChatMsg> {
         let tag_values = tag_arr
             .split(";")
             .map(|tags| tags.split("=").collect::<Vec<_>>());
-
 
         // Parse message
         let message = chat_msg.splitn(3, " :").last();
@@ -41,12 +41,9 @@ pub fn parse_twitch_msg(chat_msg: String) -> Option<TwitchChatMsg> {
         return Some(TwitchChatMsg {
             display_name,
             channel_name: channel_name.to_string(),
-            message: message.unwrap().to_string()
-        })
-
-        
-} else {
-    return None;
-}
-
+            message: message.unwrap().to_string(),
+        });
+    } else {
+        return None;
+    }
 }

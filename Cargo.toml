@@ -15,3 +15,4 @@ serde = { version = "1.0.117", features = ["derive"] }
 serde_json = "1.0.59"
 notify-rust = { version = "4.0.0", features = ["images"] }
 native-tls = "0.2.5"
+config = "0.10.1"
