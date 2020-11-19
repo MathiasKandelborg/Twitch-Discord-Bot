@@ -22,7 +22,7 @@ The app uses configuration files:
 It also reads sensitive settings from ENV.
 
 | Key           | Value                                       | Description                                   |
-|               |                                             |                                               |
+|    ---           |                             ---                |          ---                                     |
 | T_AUTH_TOKEN  | Token from https://twitchapps.com/tmi/      | Chat token, user who redeemed is the username |
 | T_OAUTH_TOKEN | Token from https://twitchapps.com/tokengen/ | Generated with developer app id and scopes    |
 | T_CHANNEL_ID  | The _unique_ channel/user ID                | Found with the twitch API                     |
