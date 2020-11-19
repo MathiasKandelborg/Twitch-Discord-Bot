@@ -1,5 +1,7 @@
 {
+  "!github": "https://github.com/MathiasKandelborg",
   "test": "I KNOW THIS WILL WORK",
-  "!test2": "N E O N S A U C E",
-  "i command you": "No, you don't!"
+  "!2": "N E O N S A U C E",
+  "i command you": "No, you don't!",
+  "!send_email email@bobross<dot>com": "hey bob"
 }

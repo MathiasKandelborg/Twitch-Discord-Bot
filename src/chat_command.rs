@@ -19,9 +19,10 @@ pub mod chat_commands {
             .try_into::<HashMap<String, String>>()
             .expect("Could not parse commands file");
 
-        for (command_name, command) in parsed_commands.iter() {
-            if msg.message.contains(command_name) {
-                send_msg(socket, &msg.channel_name, command.to_string());
+        println!("{}", msg.message);
+        for (command_key, command_res) in parsed_commands.iter() {
+            if msg.message.trim().eq(command_key) {
+                send_msg(socket, &msg.channel_name, command_res.to_string());
             }
         }
 
