@@ -28,17 +28,20 @@ pub fn channel_points_redemption(res_msg: &Res) {
             .unwrap();
     }
 
+    // [SuggestSide] - redemtion, will add a side, if redeemed, to a specified file
+    // if file does not exist it will create file, otherwise it will truncate to it
     if redemption_title.contains("Suggest Side") {
+        // Creating the path to the file
         let pathForSides = Path::new("sides.txt");
         let display = path.display();
-
+        // creating/ opening the file in write mode
         let mut file = match File::create(&path) {
             Err(why) => panic!("couldn't create {}: {}", display, why),
             Ok(file) => file,
         };
-
-        let sideSuggestion = format!("[{}] <{}>: {}", redemption_msg.data.timestamp, redemption_msg.data.redemption.user, redemption_msg.data.redemption.reward.prompt)
-
+        // format side suggestion message
+        let sideSuggestion = format!("[{}] <{}>: {}\n", redemption_msg.data.timestamp, redemption_msg.data.redemption.user, redemption_msg.data.redemption.reward.prompt)
+        // writing side suggestion to file
         match file.write_all(sideSuggestion.as_bytes()) {
             Err(why) => panic!("couldn't write to {}: {}", display, why),
             Ok(_) => println!("successfully wrote to {}", display),
