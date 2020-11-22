@@ -6,7 +6,7 @@ use notify_rust::Hint;
 use notify_rust::Image;
 use notify_rust::Notification;
 
-use std::{process::Command, path::Path};
+use std::{env::temp_dir, path::Path, process::Command, path::PathBuf};
 
 use crate::common_structs::{Res, Msg};
 
@@ -34,7 +34,7 @@ pub fn channel_points_redemption(res_msg: &Res, settings: &Config) {
         // Check if a file path has been supplied, if not use a default path
         let _settingsMap = settings.try_into::<HashMap<String, String>>().unwrap();
         let filepath = match _settingsMap.get("side_suggestions_file") {
-            Some(value) => value,
+            Some(value) => PathBuf::new().push(value),
             None => {
                 // If there is no specified path, we will create a temporary directory and push a default file name in there
                 let mut tempdir = temp_dir();
