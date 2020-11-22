@@ -13,7 +13,7 @@ use notify_rust::Notification;
 
 use std::process::Command;
 
-use crate::common_structs::{MetaMsg, Res};
+use crate::{common_structs::{Res, MetaMsg}, notif};
 
 #[derive(Deserialize, Serialize)]
 struct NewFollower {
@@ -28,21 +28,17 @@ pub fn new_follower(res_msg: &Res) {
 
     println!("{}", serde_json::to_string(&new_follower).expect(""));
 
-    #[cfg(any(macos, windows))]
-    Notification::new()
-        .summary(format!("Tron awaits you, {}!", &new_follower.display_name).as_str())
-        .body("YOU ARE AMAZING! 🥰")
-        .unwrap()
-        .show()
-        .unwrap();
-
-
-    #[cfg(linux)]
-    Notification::new()
-        .summary(format!("Tron awaits you, {}!", &new_follower.display_name).as_str())
-        .body("YOU ARE AMAZING! 🥰")
-        .image("/home/mathias/Pictures/hackerman.jpg")
-        .unwrap()
-        .show()
-        .unwrap();
+// Res {
+//    event: "MESSAGE",
+//    data: MetaMsg {
+//        topic: "following.268365847",
+//        message: "{\"display_name\":\"mathiaskandelborg\",\"username\":\"mathiaskandelborg\",\"u
+//ser_id\":\"589623537\"}",
+//    },
+//}
+    notif!(
+        format!("Tron awaits you, {}!", &new_follower.display_name).as_str(),
+        "YOU ARE AMAZING! 🥰",
+        "/home/mathias/Pictures/hackerman.jpg",
+    );
 }
