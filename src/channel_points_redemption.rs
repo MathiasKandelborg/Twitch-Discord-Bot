@@ -6,6 +6,8 @@ use notify_rust::Hint;
 use notify_rust::Image;
 use notify_rust::Notification;
 
+use log::*;
+
 use std::process::Command;
 
 use crate::{
@@ -19,6 +21,9 @@ pub fn channel_points_redemption(res_msg: &Res) {
         .expect("Could not deserialize Channel Points data message");
 
     let redemption_title = &redemption_msg.data.redemption.reward.title;
+
+    // logging redemtion [info]
+    log!(format!("<{}> redeemed {}", &redemption_msg.data.redemption.user, redemption_title));
 
     if redemption_title.contains("Hydrate!") {
         // Send notification for hydration events

@@ -2,7 +2,9 @@
 #![warn(clippy::nursery)]
 use config::{Config, File};
 
+use log::LevelFilter;
 use serde_json::Result;
+use simplelog::*;
 
 use std::time::Duration;
 
@@ -13,7 +15,13 @@ use twitch_discord_bot::{
 };
 
 fn main() -> Result<()> {
-    env_logger::init();
+    // Initialize logger here
+    CombinedLogger::init(
+        vec![
+            TermLogger::new(LevelFilter::Warn, Config::default(), TerminalMode::Mixed),
+            WriteLogger::new(LevelFilter::Info, Config::default(), File::create("twitch-discord-bot.log").unwrap()),
+        ]
+    ).unwrap();
 
     let mut settings = Config::default();
     let mut commands = Config::default();
@@ -37,6 +45,7 @@ fn main() -> Result<()> {
     twitch_pubsub_bot.send_listen_msg();
     discord_bot.setup();
 
+    info!("Starting bot ...");
     std::thread::sleep(Duration::from_millis(200));
     loop {
 
