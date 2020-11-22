@@ -10,6 +10,8 @@ pub use parse_message::*;
 use parse_message::{Disconnected, Result};
 use rand::{thread_rng, Rng};
 
+use log::*;
+
 pub struct DiscordBot {
     pub bot_token: String,
     pub ws_url: String,
@@ -35,12 +37,12 @@ impl DiscordBot {
 
         match self.socket.write_message(Message::Text(resume_msg)) {
             Err(err) => {
-                println!("Failed to write resume message:\n{}", err);
+                error!("Failed to write resume message:\n{}", err);
               return Err(Disconnected);
             }
 
             Ok(_) => {
-                println!("Sending resume message");
+                info!("Sending resume message");
             }
         }
         Ok(())
@@ -48,7 +50,7 @@ impl DiscordBot {
 
     pub fn main(&mut self) {
         if let Err(Disconnected) = self.read_message() {
-            println!("Discord read message disconnect");
+            error!("Discord read message disconnect");
 
             self.socket = setup_socket(self.ws_url.to_string());
             self.setup_again();
@@ -59,11 +61,11 @@ impl DiscordBot {
 
     pub fn read_message(&mut self) -> Result<()> {
         if !self.socket.can_read() {
-            println!("Discord Cats can't read!!!");
+            error!("Discord Cats can't read!!!");
             return Err(Disconnected);
         }
         if !self.socket.can_write() {
-            println!("Discord can't write!!!");
+            error!("Discord can't write!!!");
             return Err(Disconnected);
         }
 
@@ -75,16 +77,16 @@ impl DiscordBot {
                 // it's a faaaaaake
             }
             Err(err) => {
-                println!("Discord WS Error MSG:\n{}", err);
+                error!("Discord WS Error MSG:\n{}", err);
                 return Err(Disconnected);
             }
             Ok(Message::Text(res)) => {
                 let msg = DiscordMsgParser::parse(self, res.as_str());
                 if let Err(Disconnected) = msg {
-                    println!("Failed to parse Discord msg");
+                    error!("Failed to parse Discord msg");
                     return Err(Disconnected);
                 } else {
-                    println!("Discord msg parsing successful");
+                    error!("Discord msg parsing successful");
                     return Ok(());
                 }
             }
@@ -110,11 +112,11 @@ impl DiscordBot {
                 .write_message(Message::Text(heartbeat.to_string()))
             {
                 Err(err) => {
-                    println!("Discord WS Write failed: {}", err);
+                    error!("Discord WS Write failed: {}", err);
                     return Err(Disconnected);
                 }
                 Ok(_) => {
-                    println!("My heart beats");
+                    info!("My heart beats");
                     self.last_heartbeat = Instant::now();
                 }
             }
@@ -126,7 +128,7 @@ impl DiscordBot {
     }
 
     pub fn setup_again(&mut self) {
-        println!("Establishing new Discord connection");
+        info!("Establishing new Discord connection");
 
         if let Some(dur) = self.last_reconnect_try {
             if dur.elapsed() >= self.reconnect_duration {
@@ -165,7 +167,7 @@ impl DiscordBot {
                     // we're blocking
                 }
                 Err(err) => {
-                    println!("Discord errr {}", err);
+                    error!("Discord errr {}", err);
                 }
 
                 Ok(Message::Text(res)) => {
@@ -177,7 +179,7 @@ impl DiscordBot {
                         self.heartbeat_interval =
                             Duration::from_millis(hb_msg.d.heartbeat_interval);
 
-                        println!("Sending connect after receiving heartbeart");
+                        info!("Sending connect after receiving heartbeart");
 
                         self.socket
                             .write_message(Message::Text(connect_msg.to_string()))
@@ -187,7 +189,7 @@ impl DiscordBot {
                     }
                 }
                 Ok(..) => {
-                    print!("");
+                    info!("");
                 }
             }
         }

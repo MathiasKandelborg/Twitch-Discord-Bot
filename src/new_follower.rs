@@ -10,6 +10,8 @@ use std::process::Command;
 
 use crate::common_structs::{Res, MetaMsg};
 
+use log::*;
+
 #[derive(Deserialize, Serialize)]
 struct NewFollower {
     display_name: String,
@@ -20,7 +22,7 @@ struct NewFollower {
 pub fn new_follower(res_msg: &Res) {
     let new_follower: NewFollower = serde_json::from_str(res_msg.data.message.as_str()).expect("No json");
 
-    println!("{}", serde_json::to_string(&new_follower).expect(""));
+    log!(format!("{}", serde_json::to_string(&new_follower).expect("")));
 
 // Res {
 //    event: "MESSAGE",
