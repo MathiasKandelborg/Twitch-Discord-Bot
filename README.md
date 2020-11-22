@@ -14,6 +14,10 @@ A work-in-progress bot
 
 ## Instructions
 
+1. Create Discord application
+2. Authorize application [at this link](https://discord.com/oauth2/authorize?client_id=<CLIENT_ID>&scope=bot&permissions=8) `<CLIENT_ID>` & changing permissions to what you want/need
+
+
 The app uses configuration files:
 
 - settings 

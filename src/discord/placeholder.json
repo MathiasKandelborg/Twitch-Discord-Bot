@@ -1,0 +1,399 @@
+{
+    "d": {
+        "afk_channel_id": "776934484024885288",
+        "afk_timeout": 300,
+        "application_id": null,
+        "banner": null,
+        "channels": [
+            {
+                "id": "771305933099499561",
+                "name": "General channels",
+                "nsfw": false,
+                "parent_id": null,
+                "permission_overwrites": [],
+                "position": 0,
+                "type": 4
+            },
+            {
+                "id": "771305933099499562",
+                "name": "Voice Channels",
+                "permission_overwrites": [],
+                "position": 0,
+                "type": 4
+            },
+            {
+                "id": "771305933099499563",
+                "last_message_id": "779799197708713995",
+                "name": "\ud83d\ude0e-general",
+                "nsfw": false,
+                "parent_id": "771305933099499561",
+                "permission_overwrites": [],
+                "position": 4,
+                "rate_limit_per_user": 0,
+                "topic": null,
+                "type": 0
+            },
+            {
+                "bitrate": 64000,
+                "id": "771305933099499564",
+                "name": "CPU",
+                "nsfw": false,
+                "parent_id": "771305933099499562",
+                "permission_overwrites": [],
+                "position": 0,
+                "type": 2,
+                "user_limit": 0
+            },
+            {
+                "id": "771307008023330827",
+                "last_message_id": "771310056188018708",
+                "name": "\ud83d\udcd6-rules",
+                "nsfw": false,
+                "parent_id": null,
+                "permission_overwrites": [
+                    {
+                        "allow": "0",
+                        "deny": "2048",
+                        "id": "771305933099499560",
+                        "type": 0
+                    }
+                ],
+                "position": 1,
+                "rate_limit_per_user": 0,
+                "topic": null,
+                "type": 5
+            },
+            {
+                "id": "771307008023330828",
+                "last_message_id": "779308547246260254",
+                "name": "staff-channel",
+                "nsfw": false,
+                "parent_id": null,
+                "permission_overwrites": [
+                    {
+                        "allow": "0",
+                        "deny": "1024",
+                        "id": "771305933099499560",
+                        "type": 0
+                    }
+                ],
+                "position": 0,
+                "rate_limit_per_user": 0,
+                "topic": null,
+                "type": 0
+            },
+            {
+                "id": "776528366383792129",
+                "last_message_id": "779435288380440616",
+                "name": "\ud83d\udd96-join-log",
+                "nsfw": false,
+                "parent_id": "771305933099499561",
+                "permission_overwrites": [
+                    {
+                        "allow": "328768",
+                        "deny": "805500945",
+                        "id": "771305933099499560",
+                        "type": 0
+                    }
+                ],
+                "position": 3,
+                "rate_limit_per_user": 0,
+                "topic": null,
+                "type": 0
+            },
+            {
+                "id": "776934262766698496",
+                "last_message_id": "779653076109230091",
+                "name": "\ud83d\udcbb-coding-help",
+                "nsfw": false,
+                "parent_id": "771305933099499561",
+                "permission_overwrites": [],
+                "position": 5,
+                "rate_limit_per_user": 0,
+                "topic": null,
+                "type": 0
+            },
+            {
+                "bitrate": 64000,
+                "id": "776934484024885288",
+                "name": "\u2693-AFK",
+                "nsfw": false,
+                "parent_id": "771305933099499562",
+                "permission_overwrites": [],
+                "position": 1,
+                "type": 2,
+                "user_limit": 0
+            },
+            {
+                "id": "776935263946539050",
+                "last_message_id": "779761449366716417",
+                "name": "\ud83d\udce3-announcements",
+                "nsfw": false,
+                "parent_id": null,
+                "permission_overwrites": [
+                    {
+                        "allow": "0",
+                        "deny": "2048",
+                        "id": "771305933099499560",
+                        "type": 0
+                    }
+                ],
+                "position": 2,
+                "topic": null,
+                "type": 5
+            },
+            {
+                "id": "779677281005994014",
+                "last_message_id": "779677726030299156",
+                "name": "\ud83d\udc4c-memes",
+                "nsfw": false,
+                "parent_id": "771305933099499561",
+                "permission_overwrites": [],
+                "position": 6,
+                "rate_limit_per_user": 0,
+                "topic": null,
+                "type": 0
+            }
+        ],
+        "default_message_notifications": 1,
+        "description": null,
+        "discovery_splash": null,
+        "emojis": [],
+        "explicit_content_filter": 2,
+        "features": [
+            "NEWS",
+            "COMMUNITY"
+        ],
+        "guild_hashes": {
+            "channels": {
+                "hash": "d7mmLNOLd5Y",
+                "omitted": false
+            },
+            "metadata": {
+                "hash": "bmQGmkM1rkc",
+                "omitted": false
+            },
+            "roles": {
+                "hash": "odd6f/YiUvY",
+                "omitted": false
+            },
+            "version": 1
+        },
+        "icon": "b6da08cb984f93968869343e0402e723",
+        "id": "771305933099499560",
+        "joined_at": "2020-11-20T00:07:54.885553+00:00",
+        "large": false,
+        "lazy": true,
+        "max_members": 100000,
+        "max_video_channel_users": 25,
+        "member_count": 15,
+        "members": [
+            {
+                "deaf": false,
+                "hoisted_role": null,
+                "is_pending": false,
+                "joined_at": "2020-11-20T00:07:54.885553+00:00",
+                "mute": false,
+                "nick": null,
+                "premium_since": null,
+                "roles": [
+                    "779135902713643020"
+                ],
+                "user": {
+                    "avatar": null,
+                    "bot": true,
+                    "discriminator": "6537",
+                    "id": "778410230790619157",
+                    "username": "NEON BOT"
+                }
+            }
+        ],
+        "mfa_level": 0,
+        "name": "Tron - Neon Complex",
+        "owner_id": "749234605214924870",
+        "preferred_locale": "en-US",
+        "premium_subscription_count": 0,
+        "premium_tier": 0,
+        "presences": [],
+        "public_updates_channel_id": "771307008023330828",
+        "region": "europe",
+        "roles": [
+            {
+                "color": 0,
+                "hoist": false,
+                "id": "771305933099499560",
+                "managed": false,
+                "mentionable": false,
+                "name": "@everyone",
+                "permissions": "104189633",
+                "position": 0
+            },
+            {
+                "color": 10181046,
+                "hoist": false,
+                "id": "771671492000874538",
+                "managed": false,
+                "mentionable": false,
+                "name": "Tron Resident",
+                "permissions": "104189633",
+                "position": 8
+            },
+            {
+                "color": 2067276,
+                "hoist": false,
+                "id": "771671593826123777",
+                "managed": false,
+                "mentionable": false,
+                "name": "64 Bit User",
+                "permissions": "104189633",
+                "position": 9
+            },
+            {
+                "color": 15158332,
+                "hoist": false,
+                "id": "771671759593144330",
+                "managed": false,
+                "mentionable": false,
+                "name": "AMD Specialist",
+                "permissions": "104189633",
+                "position": 7
+            },
+            {
+                "color": 1146986,
+                "hoist": false,
+                "id": "771671990746218496",
+                "managed": false,
+                "mentionable": false,
+                "name": "NVIDIA  Operative",
+                "permissions": "104189633",
+                "position": 6
+            },
+            {
+                "color": 9936031,
+                "hoist": false,
+                "id": "771672172652396544",
+                "managed": false,
+                "mentionable": false,
+                "name": "Moderator",
+                "permissions": "2013265919",
+                "position": 13
+            },
+            {
+                "color": 15277667,
+                "hoist": false,
+                "id": "771672252998746123",
+                "managed": false,
+                "mentionable": false,
+                "name": "Wayva Residency Member",
+                "permissions": "104189633",
+                "position": 12
+            },
+            {
+                "color": 1752220,
+                "hoist": false,
+                "id": "771672619270275082",
+                "managed": false,
+                "mentionable": false,
+                "name": "256 Bit Machine",
+                "permissions": "104189633",
+                "position": 10
+            },
+            {
+                "color": 11342935,
+                "hoist": false,
+                "id": "771672757410201642",
+                "managed": false,
+                "mentionable": false,
+                "name": "69 Quantum Bit User",
+                "permissions": "104189633",
+                "position": 11
+            },
+            {
+                "color": 7419530,
+                "hoist": true,
+                "id": "771673031927267379",
+                "managed": false,
+                "mentionable": false,
+                "name": "Tron Traveler",
+                "permissions": "104189633",
+                "position": 5
+            },
+            {
+                "color": 0,
+                "hoist": false,
+                "id": "774583540104953896",
+                "managed": true,
+                "mentionable": false,
+                "name": "Twitch Subscriber",
+                "permissions": "104189633",
+                "position": 4,
+                "tags": {
+                    "integration_id": "774583537771872278"
+                }
+            },
+            {
+                "color": 0,
+                "hoist": false,
+                "id": "774583540104953897",
+                "managed": true,
+                "mentionable": false,
+                "name": "Twitch Subscriber: Tier 1",
+                "permissions": "104189633",
+                "position": 3,
+                "tags": {
+                    "integration_id": "774583537771872278"
+                }
+            },
+            {
+                "color": 0,
+                "hoist": false,
+                "id": "774583540104953898",
+                "managed": true,
+                "mentionable": false,
+                "name": "Twitch Subscriber: Tier 2",
+                "permissions": "104189633",
+                "position": 2,
+                "tags": {
+                    "integration_id": "774583537771872278"
+                }
+            },
+            {
+                "color": 0,
+                "hoist": false,
+                "id": "774583540104953899",
+                "managed": true,
+                "mentionable": false,
+                "name": "Twitch Subscriber: Tier 3",
+                "permissions": "104189633",
+                "position": 1,
+                "tags": {
+                    "integration_id": "774583537771872278"
+                }
+            },
+            {
+                "color": 0,
+                "hoist": false,
+                "id": "779135902713643020",
+                "managed": true,
+                "mentionable": false,
+                "name": "NEON BOT",
+                "permissions": "8",
+                "position": 1,
+                "tags": {
+                    "bot_id": "778410230790619157"
+                }
+            }
+        ],
+        "rules_channel_id": "771307008023330827",
+        "splash": null,
+        "system_channel_flags": 0,
+        "system_channel_id": "776528366383792129",
+        "unavailable": false,
+        "vanity_url_code": null,
+        "verification_level": 1,
+        "voice_states": []
+    },
+    "op": 0,
+    "s": 2,
+    "t": "GUILD_CREATE"
+}

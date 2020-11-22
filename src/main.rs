@@ -33,16 +33,18 @@ fn main() -> Result<()> {
     let mut discord_bot = create_discord_bot();
 
 
-    twitch_pubsub_bot.setup();
+    twitch_chat_bot.send_listen_msg();
+    twitch_pubsub_bot.send_listen_msg();
     discord_bot.setup();
 
     std::thread::sleep(Duration::from_millis(200));
     loop {
-        discord_bot.send_heartbeat();
-        twitch_pubsub_bot.ping_pong();
 
-        twitch_pubsub_bot.read_message();
-        twitch_chat_bot.read_message(&commands);
+        discord_bot.main();
+
+        twitch_chat_bot.main(&commands);
+
+        twitch_pubsub_bot.main();
         // MAKE SURE THIS IS IN THE MAIN LOOP
         // YOUR PROCESSOR WILL GO BRRRRRRRRRRRRRRRRRR OTHERWISE
         std::thread::sleep(Duration::from_millis(120));

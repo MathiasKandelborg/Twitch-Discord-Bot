@@ -40,7 +40,8 @@ pub fn channel_points_redemption(res_msg: &Res) {
         Command::new("sh")
             .arg("-c")
             .arg("cool-retro-term")
-            .output()
-            .expect("failed to execute process");
+            .spawn()
+            .expect("Failed to execute Futuristic retro term D:");
+
     }
 }

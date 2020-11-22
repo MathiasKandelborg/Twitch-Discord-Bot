@@ -1,38 +1,99 @@
+use crate::twitch::setup_socket;
 use native_tls::TlsStream;
-use serde::{Deserialize, Serialize};
 use std::env::var;
 use std::net::TcpStream;
 use std::time::{Duration, Instant};
 use tungstenite::stream::Stream;
-use tungstenite::{connect, Message, WebSocket};
-
-#[derive(Deserialize, Serialize)]
-struct HeatBeatMessage {
-    op: u16,
-    d: Option<i16>,
-}
-
-#[derive(Deserialize, Serialize)]
-struct HeartBeatData {
-    heartbeat_interval: u64,
-}
-
-#[derive(Deserialize, Serialize)]
-struct DiscordHeatBeat {
-    op: u8,
-    d: HeartBeatData,
-}
+use tungstenite::{Message, WebSocket};
+pub mod parse_message;
+pub use parse_message::*;
+use parse_message::{Disconnected, Result};
+use rand::{thread_rng, Rng};
 
 pub struct DiscordBot {
     pub bot_token: String,
-    pub heartbeat_interval: Duration,
+    pub ws_url: String,
     pub session_id: String,
     pub socket: WebSocket<Stream<TcpStream, TlsStream<TcpStream>>>,
+    pub reconnect_duration: Duration,
+    pub last_reconnect_try: Option<Instant>,
+    pub heartbeat_interval: Duration,
     pub last_heartbeat: Instant,
+    pub last_sequence: Option<i64>,
 }
 
 impl DiscordBot {
-    pub fn send_heartbeat(&mut self) {
+    pub fn resume(&mut self) -> Result<()> {
+        let seq = self.last_sequence;
+        let resume_msg = r#"{"op": 6,"d": {"token": ""#.to_string()
+            + self.bot_token.as_str()
+            + r#"","session_id": ""#
+            + self.session_id.as_str()
+            + r#"","seq": "#
+            + seq.unwrap_or(0).to_string().as_str()
+            + r#"}"#;
+
+        match self.socket.write_message(Message::Text(resume_msg)) {
+            Err(err) => {
+                println!("Failed to write resume message:\n{}", err);
+              return Err(Disconnected);
+            }
+
+            Ok(_) => {
+                println!("Sending resume message");
+            }
+        }
+        Ok(())
+    }
+
+    pub fn main(&mut self) {
+        if let Err(Disconnected) = self.read_message() {
+            println!("Discord read message disconnect");
+
+            self.socket = setup_socket(self.ws_url.to_string());
+            self.setup_again();
+        } else {
+            if let Err(Disconnected) = self.send_heartbeat() {}
+        };
+    }
+
+    pub fn read_message(&mut self) -> Result<()> {
+        if !self.socket.can_read() {
+            println!("Discord Cats can't read!!!");
+            return Err(Disconnected);
+        }
+        if !self.socket.can_write() {
+            println!("Discord can't write!!!");
+            return Err(Disconnected);
+        }
+
+        match self.socket.read_message() {
+            Err(tungstenite::error::Error::Io(err))
+                if err.kind() == std::io::ErrorKind::WouldBlock =>
+            {
+                // we're blocking
+                // it's a faaaaaake
+            }
+            Err(err) => {
+                println!("Discord WS Error MSG:\n{}", err);
+                return Err(Disconnected);
+            }
+            Ok(Message::Text(res)) => {
+                let msg = DiscordMsgParser::parse(self, res.as_str());
+                if let Err(Disconnected) = msg {
+                    println!("Failed to parse Discord msg");
+                    return Err(Disconnected);
+                } else {
+                    println!("Discord msg parsing successful");
+                    return Ok(());
+                }
+            }
+            Ok(..) => {}
+        }
+        Ok(())
+    }
+
+    pub fn send_heartbeat(&mut self) -> Result<()> {
         /*  Used to maintain an active gateway connection.
         Must be sent every heartbeat_interval milliseconds after the Opcode 10 Hello payload is received.
         The inner d key is the last sequence number—s—received by the client.
@@ -43,16 +104,38 @@ impl DiscordBot {
                 "d": null
             }"#;
 
-        let heatbeat_msg: HeatBeatMessage = serde_json::from_str(heartbeat).unwrap();
-
         if self.last_heartbeat.elapsed() >= self.heartbeat_interval {
-            println!("My heart beats");
+            match self
+                .socket
+                .write_message(Message::Text(heartbeat.to_string()))
+            {
+                Err(err) => {
+                    println!("Discord WS Write failed: {}", err);
+                    return Err(Disconnected);
+                }
+                Ok(_) => {
+                    println!("My heart beats");
+                    self.last_heartbeat = Instant::now();
+                }
+            }
 
-            self.socket
-                .write_message(Message::Text(serde_json::to_string(&heatbeat_msg).unwrap()))
-                .unwrap();
+            Ok(())
+        } else {
+            Err(Disconnected)
+        }
+    }
 
-            self.last_heartbeat = Instant::now();
+    pub fn setup_again(&mut self) {
+        println!("Establishing new Discord connection");
+
+        if let Some(dur) = self.last_reconnect_try {
+            if dur.elapsed() >= self.reconnect_duration {
+                self.socket = setup_socket(self.ws_url.to_string());
+
+                self.setup();
+            }
+        } else {
+            self.last_reconnect_try = Some(Instant::now());
         }
     }
 
@@ -82,10 +165,11 @@ impl DiscordBot {
                     // we're blocking
                 }
                 Err(err) => {
-                    let _ = dbg!("Discord errr {}", err);
+                    println!("Discord errr {}", err);
                 }
 
                 Ok(Message::Text(res)) => {
+                    // println!("{}", res.trim());
                     if res.contains(r#""op":10"#) {
                         let hb_msg: DiscordHeatBeat = serde_json::from_str(res.trim())
                             .expect("Discord Heartbeat could not be deserialized");
@@ -106,29 +190,26 @@ impl DiscordBot {
                     print!("");
                 }
             }
-            std::thread::sleep(Duration::from_millis(120));
         }
     }
 }
 
 pub fn create_discord_bot() -> DiscordBot {
     let bot_token = var("D_BOT_TOKEN").unwrap();
-
-    let (socket, _res) = connect("wss://gateway.discord.gg/?v=8&encoding=json").unwrap();
-
-    // Same as above TODO: abstract this
-    match socket.get_ref() {
-        tungstenite::stream::Stream::Plain(s) => s,
-        tungstenite::stream::Stream::Tls(s) => s.get_ref(),
-    }
-    .set_nonblocking(true)
-    .unwrap();
+    let url = "wss://gateway.discord.gg/?v=8&encoding=json".to_string();
+    let socket = setup_socket(url.to_string());
+    let jitter = thread_rng().gen_range(1000, 5000);
+    let reconnect_duration = Duration::from_millis(jitter);
 
     DiscordBot {
         session_id: "".to_string(),
+        ws_url: url,
+        reconnect_duration,
+        last_reconnect_try: None,
         bot_token,
         socket,
         last_heartbeat: Instant::now(),
         heartbeat_interval: Duration::from_millis(44500),
+        last_sequence: None,
     }
 }
