@@ -71,14 +71,14 @@ impl TwidshTshadBott {
         if let Err(Disconnected) = self.read_message(commands) {
             self.back_off()
         } else {
-           // println!("Chat read msg successful");
+            // println!("Chat read msg successful");
+            self.settings = settings;
         }
-        self.settings = settings;
     }
 
     pub fn send_ping(&mut self) -> Result<()> {
         // Send PONG if Twitch is going PING
-       // println!("Recived Twitch Chat PING! Sent PONG!");
+        // println!("Recived Twitch Chat PING! Sent PONG!");
 
         let send_pong = self
             .socket
@@ -120,11 +120,11 @@ impl TwidshTshadBott {
             Ok(Message::Text(res)) => {
                 if res.contains("PING") {
                     if let Err(Disconnected) = self.send_ping() {
-                       return Err(Disconnected);
+                        return Err(Disconnected);
                     }
                 }
 
-         //       println!("{}", res.trim()); // For debugging
+                //       println!("{}", res.trim()); // For debugging
                 match parse_twitch_msg(res) {
                     Some(msg) => {
                         println!(
@@ -142,7 +142,7 @@ impl TwidshTshadBott {
         }
         Ok(())
     }
-   pub fn send_listen_msg(&mut self) {
+    pub fn send_listen_msg(&mut self) {
         self.socket
             .write_message(Message::Text(
                 "CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership".to_string(),
@@ -160,7 +160,7 @@ impl TwidshTshadBott {
             .write_message(Message::Text(format!("JOIN #neonraytracer")))
             .unwrap();
 
-       self.last_back_off = None;
+        self.last_back_off = None;
     }
 
     fn back_off(&mut self) {
@@ -197,22 +197,21 @@ pub struct TwidshPubSubBott {
 }
 
 impl TwidshPubSubBott {
-
     pub fn main(&mut self, settings: &Config) {
-       // println!("Running main");
+        // println!("Running main");
         if let Err(Disconnected) = self.read_message() {
             println!("Recieved Disconnect, backing off");
             self.back_off();
         } else {
-         //   println!("Sending ping pong");
+            //   println!("Sending ping pong");
             if let Err(Disconnected) = self.ping_pong() {
                 println!("Recieved PubSub ping Disconnect, backing off");
                 self.back_off();
             } else {
-           //     println!("PubSub Ping successfull");
+                // println!("PubSub Ping successfull");
+                self.settings = settings;
             }
         }
-        self.settings = settings;
     }
 
     pub fn send_listen_msg(&mut self) {
@@ -271,7 +270,7 @@ impl TwidshPubSubBott {
                     println!("Recived Twitch WS PONG!");
                 }
 
-               // println!("{}", res.trim());
+                // println!("{}", res.trim());
                 if res.contains("data") {
                     let res_msg: Res =
                         serde_json::from_str(res.trim()).expect("Could not deserialize meta msg");
@@ -280,7 +279,9 @@ impl TwidshPubSubBott {
 
                     match topic_str.as_str().split(".").collect::<Vec<&str>>()[0] {
                         "channel-points-channel-v1" => {
-                            channel_points_redemption::channel_points_redemption(&res_msg, &settings)
+                            channel_points_redemption::channel_points_redemption(
+                                &res_msg, &settings,
+                            )
                         }
 
                         "following" => new_follower::new_follower(&res_msg),
