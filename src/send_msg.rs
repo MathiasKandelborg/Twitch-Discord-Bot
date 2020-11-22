@@ -13,6 +13,6 @@ pub fn send_msg(
 
     let msg = format!("{}{}", msg_id, msg);
 
-    println!("Sending message:\n{}\n", &msg);
+    info!("Sending message: {}", &msg);
     ws_chat.write_message(Message::Text(msg)).unwrap()
 }

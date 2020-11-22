@@ -17,6 +17,8 @@ use crate::{
 use common_structs::Res;
 use rand::{thread_rng, Rng};
 
+use log::*;
+
 pub struct Disconnected;
 
 type Result<T> = std::result::Result<T, Disconnected>;
@@ -84,11 +86,11 @@ impl TwidshTshadBott {
 
         match send_pong {
             Ok(_) => {
-                println!("Sent Twitch chat pong");
+                info!("Sent Twitch chat pong");
                 Ok(())
             }
             Err(err) => {
-                println!("Could not write pong msg to twitch:\n {}\n", err);
+                error!("Could not write pong msg to twitch:\n {}\n", err);
                 Err(Disconnected)
             }
         }
@@ -96,11 +98,11 @@ impl TwidshTshadBott {
 
     pub fn read_message(&mut self, commands: &Config) -> Result<()> {
         if !self.socket.can_read() {
-            println!("Chat Cats can't read!!!");
+            error!("Chat Cats can't read!!!");
             return Err(Disconnected);
         }
         if !self.socket.can_write() {
-            println!("Can't write!!!");
+            error!("Can't write!!!");
             return Err(Disconnected);
         }
         // Twitch websockets
@@ -112,7 +114,7 @@ impl TwidshTshadBott {
                 // it's a faaaaaake
             }
             Err(err) => {
-                let _ = println!("TWITCH CHAT WS ERROR MSG:\n{}", err);
+                let _ = error!("TWITCH CHAT WS ERROR MSG:\n{}", err);
                 return Err(Disconnected);
             }
             Ok(Message::Text(res)) => {
@@ -125,12 +127,12 @@ impl TwidshTshadBott {
          //       println!("{}", res.trim()); // For debugging
                 match parse_twitch_msg(res) {
                     Some(msg) => {
-                        println!(
-                            "\nUser \"{}\"\nIn {}'s channel\nWrote: \"{}\"",
-                            msg.display_name,
+                        log!(format!(
+                            "#{} <{}>: \"{}\"",
                             msg.channel_name,
+                            msg.display_name,
                             msg.message.trim()
-                        );
+                        ));
                         chat_commands::cmd_response(msg, &mut self.socket, &commands);
                     }
                     None => {}
@@ -166,17 +168,17 @@ impl TwidshTshadBott {
 
         if let Some(last) = self.last_back_off {
             if last.elapsed() > self.back_off_timer && !(self.back_off_timer > max_back_off) {
-                println!("Backing off chat for REEEEEEEEEEEEEEEEALZ");
+                log!("Backing off chat for REEEEEEEEEEEEEEEEALZ");
                 self.back_off_timer = self.back_off_timer * 2;
                 self.socket = setup_socket(self.socket_url.to_string());
                 self.send_listen_msg();
 
                 self.last_back_off = Some(Instant::now());
             } else {
-                println!("I GIBE UP ON CHAT 🤬");
+                log!("I GIBE UP ON CHAT 🤬");
             }
         } else {
-            println!("No last chat back off");
+            info!("No last chat back off");
             self.last_back_off = Some(Instant::now());
         }
     }
@@ -198,12 +200,12 @@ impl TwidshPubSubBott {
     pub fn main(&mut self) {
        // println!("Running main");
         if let Err(Disconnected) = self.read_message() {
-            println!("Recieved Disconnect, backing off");
+            error!("Recieved Disconnect, backing off");
             self.back_off();
         } else {
          //   println!("Sending ping pong");
             if let Err(Disconnected) = self.ping_pong() {
-                println!("Recieved PubSub ping Disconnect, backing off");
+                warn!("Recieved PubSub ping Disconnect, backing off");
                 self.back_off();
             } else {
            //     println!("PubSub Ping successfull");
@@ -240,11 +242,11 @@ impl TwidshPubSubBott {
 
     pub fn read_message(&mut self) -> Result<()> {
         if !self.socket.can_read() {
-            println!("Cats can't read!!!");
+            error!("Cats can't read!!!");
             return Err(Disconnected);
         }
         if !self.socket.can_write() {
-            println!("Can't write!!!");
+            error!("Can't write!!!");
             return Err(Disconnected);
         }
         //  println!("Reading PubSub message!!!");
@@ -256,7 +258,7 @@ impl TwidshPubSubBott {
                 // we're blocking
             }
             Err(err) => {
-                println!("Twitch PubSub WS disconnect:\n{}", err);
+                error!("Twitch PubSub WS disconnect:\n{}", err);
                 return Err(Disconnected);
             }
 
@@ -264,7 +266,7 @@ impl TwidshPubSubBott {
                 if res.contains("PONG") {
                     self.expected_pong = None;
 
-                    println!("Recived Twitch WS PONG!");
+                    info!("Recived Twitch WS PONG!");
                 }
 
                // println!("{}", res.trim());
@@ -299,7 +301,7 @@ impl TwidshPubSubBott {
                 Ok(())
             }
             Err(err) => {
-                println!("Twitch PubSub WS ERROR: {}", err);
+                error!("Twitch PubSub WS ERROR: {}", err);
                 Err(Disconnected)
             }
         }
@@ -327,7 +329,7 @@ impl TwidshPubSubBott {
         // TODO: We probably want to handle reconnecting: https://dev.twitch.tv/docs/pubsub#connection-management
         if let Some(dt) = self.expected_pong {
             if dt.elapsed() > self.pong_timeout {
-                println!("PONG timed out");
+                warn!("PONG timed out");
                 Err("PONG Timed out".to_string())
             } else {
                 Ok("Recived PONG".to_string())
@@ -342,17 +344,17 @@ impl TwidshPubSubBott {
 
         if let Some(last) = self.last_back_off {
             if last.elapsed() > self.back_off_timer && !(self.back_off_timer > max_back_off) {
-                println!("Backing off for REEEEEEEEEEEEEEEEALZ");
+                log!("Backing off for REEEEEEEEEEEEEEEEALZ");
                 self.back_off_timer = self.back_off_timer * 2;
                 self.socket = setup_socket(self.socket_url.to_string());
                 self.send_listen_msg();
 
                 self.last_back_off = Some(Instant::now());
             } else {
-                println!("I GIBE UP 🤬");
+                log!("I GIBE UP 🤬");
             }
         } else {
-            println!("No last back off");
+            info!("No last back off");
             self.last_back_off = Some(Instant::now());
         }
     }

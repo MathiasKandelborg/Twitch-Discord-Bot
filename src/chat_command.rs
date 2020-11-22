@@ -7,6 +7,7 @@ pub mod chat_commands {
     use std::net::TcpStream;
     use tungstenite::stream::Stream;
     use tungstenite::WebSocket;
+    use log::*;
 
     pub fn cmd_response(
         msg: TwitchChatMsg,
@@ -19,7 +20,7 @@ pub mod chat_commands {
             .try_into::<HashMap<String, String>>()
             .expect("Could not parse commands file");
 
-        println!("{}", msg.message);
+        log!(format!("<{}>: {}", msg.display_name, msg.message));
         for (command_key, command_res) in parsed_commands.iter() {
             if msg.message.trim().eq(command_key) {
                 send_msg(socket, &msg.channel_name, command_res.to_string());
