@@ -10,7 +10,7 @@ use std::{process::Command, path::Path};
 
 use crate::common_structs::{Res, Msg};
 
-pub fn channel_points_redemption(res_msg: &Res) {
+pub fn channel_points_redemption(res_msg: &Res, settings: &Config) {
     println!("Channgel points redeemed!!");
     let redemption_msg: Msg = serde_json::from_str(&res_msg.data.message.to_string())
         .expect("Could not deserialize Channel Points data message");
@@ -31,8 +31,19 @@ pub fn channel_points_redemption(res_msg: &Res) {
     // [SuggestSide] - redemtion, will add a side, if redeemed, to a specified file
     // if file does not exist it will create file, otherwise it will truncate to it
     if redemption_title.contains("Suggest Side") {
+        // Check if a file path has been supplied, if not use a default path
+        let _settingsMap = settings.try_into::<HashMap<String, String>>().unwrap();
+        let filepath = match _settingsMap.get("side_suggestions_file") {
+            Some(value) => value,
+            None => {
+                // If there is no specified path, we will create a temporary directory and push a default file name in there
+                let mut tempdir = temp_dir();
+                tempdir.push("sides.txt");
+                tempdir
+            },
+        };
         // Creating the path to the file
-        let pathForSides = Path::new("/home/mathias/Documents/sides.txt");
+        let pathForSides = Path::new(&filepath);
         let display = path.display();
         // creating/ opening the file in write mode
         let mut file = match File::create(&path) {

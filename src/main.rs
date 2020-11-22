@@ -42,9 +42,9 @@ fn main() -> Result<()> {
 
         discord_bot.main();
 
-        twitch_chat_bot.main(&commands);
+        twitch_chat_bot.main(&commands, &settings);
 
-        twitch_pubsub_bot.main();
+        twitch_pubsub_bot.main(&settings);
         // MAKE SURE THIS IS IN THE MAIN LOOP
         // YOUR PROCESSOR WILL GO BRRRRRRRRRRRRRRRRRR OTHERWISE
         std::thread::sleep(Duration::from_millis(120));

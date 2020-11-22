@@ -45,6 +45,7 @@ pub struct TwidshTshadBott {
     socket_url: String,
     last_back_off: Option<Instant>,
     back_off_timer: Duration,
+    settings: &Config,
 }
 
 pub fn setup_twitch_chat_ws() -> TwidshTshadBott {
@@ -66,12 +67,13 @@ pub fn setup_twitch_chat_ws() -> TwidshTshadBott {
 }
 
 impl TwidshTshadBott {
-    pub fn main(&mut self, commands: &Config) {
+    pub fn main(&mut self, commands: &Config, settings: &Config) {
         if let Err(Disconnected) = self.read_message(commands) {
             self.back_off()
         } else {
            // println!("Chat read msg successful");
         }
+        self.settings = settings;
     }
 
     pub fn send_ping(&mut self) -> Result<()> {
@@ -191,11 +193,12 @@ pub struct TwidshPubSubBott {
     expected_pong: Option<Instant>,
     last_ping: Instant,
     pong_timeout: Duration,
+    settings: &Config,
 }
 
 impl TwidshPubSubBott {
 
-    pub fn main(&mut self) {
+    pub fn main(&mut self, settings: &Config) {
        // println!("Running main");
         if let Err(Disconnected) = self.read_message() {
             println!("Recieved Disconnect, backing off");
@@ -209,6 +212,7 @@ impl TwidshPubSubBott {
            //     println!("PubSub Ping successfull");
             }
         }
+        self.settings = settings;
     }
 
     pub fn send_listen_msg(&mut self) {
@@ -276,7 +280,7 @@ impl TwidshPubSubBott {
 
                     match topic_str.as_str().split(".").collect::<Vec<&str>>()[0] {
                         "channel-points-channel-v1" => {
-                            channel_points_redemption::channel_points_redemption(&res_msg)
+                            channel_points_redemption::channel_points_redemption(&res_msg, &settings)
                         }
 
                         "following" => new_follower::new_follower(&res_msg),
