@@ -51,5 +51,11 @@ mod tests {
             "More testing!",
             "/home/mathias/Pictures/hackerman.jpg",
         );
+        
+        // should work with no image
+        notif!(
+            "Testing",
+            "More testing!",
+        );
     }
 }
