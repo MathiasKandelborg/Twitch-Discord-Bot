@@ -68,11 +68,11 @@ pub fn points_redeemed(msg: &TopicsResMetaMsg, settings: Rc<config::Config>) {
                 );
                 // writing side suggestion to file
                 match file.write_all(sideSuggestion.as_bytes()) {
-                    Err(why) => println!(
+                    Err(why) => error!(
                         "error: [suggest side] couldn't write to {}: {}",
                         display, why
                     ),
-                    Ok(_) => println!(
+                    Ok(_) => info!(
                         "[suggest side] successfully wrote suggestion from <{}> to {}",
                         redemption_msg.data.redemption.user.display_name, display
                     ),
