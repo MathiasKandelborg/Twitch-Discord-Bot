@@ -2,6 +2,7 @@ use native_tls::TlsStream;
 use std::net::TcpStream;
 use tungstenite::stream::Stream;
 use tungstenite::{Message, WebSocket};
+use log::info;
 
 pub fn send_msg(
     ws_chat: &mut WebSocket<Stream<TcpStream, TlsStream<TcpStream>>>,
@@ -13,6 +14,6 @@ pub fn send_msg(
 
     let msg = format!("{}{}", msg_id, msg);
 
-    println!("Sending message:\n{}\n", &msg);
+    info!("Sending message: {}", &msg);
     ws_chat.write_message(Message::Text(msg)).unwrap()
 }

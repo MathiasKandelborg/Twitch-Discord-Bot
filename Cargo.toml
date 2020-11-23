@@ -1,6 +1,6 @@
 [package]
 name = "twitch-discord-bot"
-version = "0.1.0"
+version = "1.0.0-beta"
 authors = ["Mathias Wøbbe <mathias@kandelborg.dk>"]
 edition = "2018"
 
@@ -8,12 +8,20 @@ edition = "2018"
 
 [dependencies]
 tungstenite = "0.11.1"
-env_logger = "0.8.1"
+log = "0.4.11"
+simplelog = "0.8.0"
 url = "2.2.0"
 rand = "0.7.3"
 serde = { version = "1.0.117", features = ["derive"] }
 serde_json = "1.0.59"
-notify-rust = { version = "4.0.0", features = ["images"] }
 native-tls = "0.2.5"
 config = "0.10.1"
+
+[target.'cfg(any(target_os = "windows", target_os = "macos"))'.dependencies.notify-rust]
+version = "4.0.0"
+
+[target.'cfg(all(unix, not(target_os = "macos")))'.dependencies.notify-rust]
+version = "4.0.0"
+features = ["images"]
+
 

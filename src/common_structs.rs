@@ -1,22 +1,9 @@
-pub mod channel_points;
-pub use channel_points::*;
+pub mod discord;
+pub mod twitch;
+pub mod socket;
 
-pub use self::ws_structs::*;
-pub mod ws_structs {
-    use serde::{Deserialize, Serialize};
+pub use discord::*;
+pub use twitch::*;
+pub use socket::*;
 
-    #[derive(Serialize, Deserialize)]
-    pub struct DataObj {
-        pub topics: Vec<String>,
-        pub auth_token: String,
-    }
-
-    #[derive(Serialize, Deserialize)]
-    pub struct TopicListener {
-        #[serde(rename = "type")]
-        pub event: String,
-        pub nonce: String,
-        pub data: DataObj,
-    }
-}
 
