@@ -2,7 +2,6 @@ use std::{rc::Rc, env::var};
 use std::net::TcpStream;
 use std::time::{Duration, Instant};
 
-use config::Config;
 use native_tls::TlsStream;
 use tungstenite::stream::Stream;
 use tungstenite::{Message, WebSocket};

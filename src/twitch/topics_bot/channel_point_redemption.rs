@@ -53,21 +53,21 @@ pub fn points_redeemed(msg: &TopicsResMetaMsg, settings: Rc<config::Config>) {
             }
         };
         // Creating the path to the file
-        let pathForSides = Path::new(&filepath);
-        let display = pathForSides.display();
+        let path_for_sides = Path::new(&filepath);
+        let display = path_for_sides.display();
         // creating/ opening the file in write mode
-        match File::create(pathForSides) {
+        match File::create(path_for_sides) {
             Err(why) => error!("error: [suggest side] couldn't create {}: {}", display, why),
             Ok(mut file) => {
                 // format side suggestion message
-                let sideSuggestion = format!(
+                let side_suggestion = format!(
                     "[{}] <{}>: {}\n",
                     redemption_msg.data.redemption.redeemed_at,
                     redemption_msg.data.redemption.user.display_name,
                     redemption_msg.data.redemption.reward.prompt
                 );
                 // writing side suggestion to file
-                match file.write_all(sideSuggestion.as_bytes()) {
+                match file.write_all(side_suggestion.as_bytes()) {
                     Err(why) => error!(
                         "error: [suggest side] couldn't write to {}: {}",
                         display, why
