@@ -1,4 +1,4 @@
-use std::env::var;
+use std::{rc::Rc, env::var};
 use std::net::TcpStream;
 use std::time::{Duration, Instant};
 
@@ -31,6 +31,7 @@ pub struct TwidshPubSubBott {
    pub expected_pong: Option<Instant>,
    pub last_ping: Instant,
    pub pong_timeout: Duration,
+   pub settings: Rc<config::Config>,
 }
 
 impl TwidshPubSubBott {
@@ -88,7 +89,7 @@ impl TwidshPubSubBott {
 
                     match topic_str.as_str().split(".").collect::<Vec<&str>>()[0] {
                         "channel-points-channel-v1" => {
-                            points_redeemed(&msg);
+                            points_redeemed(&msg, self.settings.clone());
                         }
 
                         "following" => new_follower(&msg),
