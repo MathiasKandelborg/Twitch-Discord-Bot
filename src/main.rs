@@ -6,7 +6,7 @@ use log::*;
 use serde_json::Result;
 use simplelog::*;
 
-use std::time::Duration;
+use std::{time::Duration, rc::Rc};
 use std::fs::File;
 
 // Crate files
@@ -30,6 +30,8 @@ fn main() -> Result<()> {
     settings
         .merge(ConfFile::with_name("config"))
         .expect("Couldn't read or find configuration file");
+    // recreating immutable Rc for settings
+    let settings = Rc::new(settings);
 
     commands
         .merge(ConfFile::with_name("commands"))
@@ -38,7 +40,7 @@ fn main() -> Result<()> {
     // Twitch chat bot creates a connection initially
     let mut twitch_chat_bot = setup_twitch_chat_ws();
     // Twitch pubsub & Discord bot needs to call setup()
-    let mut twitch_pubsub_bot = create_twitch_pubsub_ws();
+    let mut twitch_pubsub_bot = create_twitch_pubsub_ws(settings);
     let mut discord_bot = create_discord_bot();
 
 
@@ -52,9 +54,9 @@ fn main() -> Result<()> {
 
         discord_bot.main();
 
-        twitch_chat_bot.main(&commands, &settings);
+        twitch_chat_bot.main(&commands);
 
-        twitch_pubsub_bot.main(&settings);
+        twitch_pubsub_bot.main();
         // MAKE SURE THIS IS IN THE MAIN LOOP
         // YOUR PROCESSOR WILL GO BRRRRRRRRRRRRRRRRRR OTHERWISE
         std::thread::sleep(Duration::from_millis(120));

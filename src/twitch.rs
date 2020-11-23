@@ -1,4 +1,4 @@
-use std::env::var;
+use std::{rc::Rc, env::var};
 use std::time::{Duration, Instant};
 
 pub mod chat_bot;
@@ -29,7 +29,7 @@ pub fn setup_twitch_chat_ws() -> TwidshTshadBott {
     }
 }
 
-pub fn create_twitch_pubsub_ws() -> TwidshPubSubBott {
+pub fn create_twitch_pubsub_ws(settings: Rc<config::Config>) -> TwidshPubSubBott {
     let channel_id = var("T_CHANNEL_ID").expect("Twitch channel id not found");
     let socket_url = "wss://pubsub-edge.twitch.tv";
 
@@ -45,11 +45,12 @@ pub fn create_twitch_pubsub_ws() -> TwidshPubSubBott {
     TwidshPubSubBott {
         channel_id,
         socket_url: socket_url.to_string(),
-        pong_timeout,
-        back_off_timer,
-        last_back_off,
-        expected_pong,
         socket,
+        last_back_off,
+        back_off_timer,
+        expected_pong,
         last_ping: Instant::now(),
+        pong_timeout,
+        settings: settings.clone()
     }
 }
