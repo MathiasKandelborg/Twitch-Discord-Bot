@@ -1,6 +1,7 @@
 use crate::discord::DiscordBot;
+use log::*;
 use serde::{Deserialize, Serialize};
-
+use std::time::Duration;
 pub struct Disconnected;
 pub type Result<T> = std::result::Result<T, Disconnected>;
 
@@ -104,6 +105,7 @@ pub struct DiscordVoiceState {
     #[serde(default)]
     self_stream: bool,
     self_video: bool,
+    #[serde(default)]
     supress: bool,
 }
 
@@ -319,7 +321,7 @@ impl DiscordMsgParser {
             let invalid: InvalidSession = serde_json::from_str(msg)
                 .expect("Could not deserialize Discord invalid session message");
             if invalid.d {
-                println!("Session is resumable");
+                info!("Dicord session is resumable");
                 return bot.resume();
             } else {
                 return Err(Disconnected);
@@ -346,15 +348,26 @@ impl DiscordMsgParser {
         };
 
         if msg.contains(r#""t":"MESSAGE_CREATE""#) {
-            println!("{:#?}", msg);
+           info!("{:#?}", msg);
 
             return Ok(());
         };
 
         if msg.contains(r#""op":11"#) {
-            println!("Discord's heart beats");
+            info!("Discord's heart beats");
 
             return Ok(());
+        };
+
+        if msg.contains(r#""op":10"#) {
+            let hb_msg: DiscordHeatBeat = serde_json::from_str(msg.trim())
+                .expect("Discord Heartbeat could not be deserialized");
+
+            bot.heartbeat_interval = Duration::from_millis(hb_msg.d.heartbeat_interval);
+
+            info!("Sending heartbeat after receiving heartbeart");
+
+            return bot.send_heartbeat();
         }
 
         println!("I am not parsing a Discord message: {}", msg);

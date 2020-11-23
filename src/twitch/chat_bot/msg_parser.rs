@@ -1,4 +1,4 @@
-// Courtesy of Togglebit, the parser master!
+/* Courtesy of Togglebit, the parser master! */
 
 pub struct TwitchChatMsg {
     pub display_name: String,

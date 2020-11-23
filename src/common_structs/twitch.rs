@@ -1,9 +1,43 @@
-#![deny(clippy::all, clippy::pedantic)]
-#![warn(clippy::nursery)]
-pub use self::meta::*;
-pub use self::reward_structs::*;
+pub mod pubsub_topics_msg {
+    use super::redemption_structs::RedemptionData;
+    use serde::{Deserialize, Serialize};
 
-pub mod reward_structs {
+    #[derive(Serialize, Deserialize)]
+    pub struct TopicListenerData {
+        pub topics: Vec<String>,
+        pub auth_token: String,
+    }
+
+    #[derive(Serialize, Deserialize)]
+    pub struct TopicListenerMeta {
+        #[serde(rename = "type")]
+        pub event: String,
+        pub nonce: String,
+        pub data: TopicListenerData,
+    }
+
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct TopicsMsg {
+        pub topic: String,
+        pub message: String,
+    }
+
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct TopicsResMetaMsg {
+        #[serde(rename = "type")]
+        pub event: String,
+        pub data: TopicsMsg,
+    }
+
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct TopicsResMsg {
+        #[serde(rename = "type")]
+        pub event: String,
+        pub data: RedemptionData,
+    }
+}
+
+pub mod redemption_structs {
     pub use serde::{Deserialize, Serialize};
 
     #[derive(Serialize, Deserialize, Debug)]
@@ -57,39 +91,14 @@ pub mod reward_structs {
         channel_id: String,
         pub redeemed_at: String,
         pub reward: RedemptionReward,
-        #[serde(skip_serializing_if = "Option::is_none")]
+        #[serde(default)]
         pub user_input: Option<String>,
         pub status: String,
     }
-}
-
-pub mod meta {
-    use serde::{Deserialize, Serialize};
-    use super::Redemption;
 
     #[derive(Serialize, Deserialize, Debug)]
-    pub struct MsgData {
+    pub struct RedemptionData {
         timestamp: String,
         pub redemption: Redemption,
-    }
-
-    #[derive(Serialize, Deserialize, Debug)]
-    pub struct MetaMsg {
-        pub topic: String,
-        pub message: String,
-    }
-
-    #[derive(Serialize, Deserialize, Debug)]
-    pub struct Msg {
-        #[serde(rename = "type")]
-        pub event: String,
-        pub data: MsgData,
-    }
-
-    #[derive(Serialize, Deserialize, Debug)]
-    pub struct Res {
-        #[serde(rename = "type")]
-        pub event: String,
-        pub data: MetaMsg,
     }
 }

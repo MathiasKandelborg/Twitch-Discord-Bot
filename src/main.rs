@@ -1,12 +1,13 @@
 #![deny(rust_2018_idioms, clippy::all, clippy::pedantic)]
 #![warn(clippy::nursery)]
-use config::{Config, File};
+use config::{Config as Conf, File as ConfFile};
 
-use log::LevelFilter;
+use log::*;
 use serde_json::Result;
 use simplelog::*;
 
 use std::time::Duration;
+use std::fs::File;
 
 // Crate files
 use twitch_discord_bot::{
@@ -18,20 +19,20 @@ fn main() -> Result<()> {
     // Initialize logger here
     CombinedLogger::init(
         vec![
-            TermLogger::new(LevelFilter::Warn, Config::default(), TerminalMode::Mixed),
+            TermLogger::new(LevelFilter::Info, Config::default(), TerminalMode::Mixed),
             WriteLogger::new(LevelFilter::Info, Config::default(), File::create("twitch-discord-bot.log").unwrap()),
         ]
     ).unwrap();
 
-    let mut settings = Config::default();
-    let mut commands = Config::default();
+    let mut settings = Conf::default();
+    let mut commands = Conf::default();
 
     settings
-        .merge(File::with_name("config"))
+        .merge(ConfFile::with_name("config"))
         .expect("Couldn't read or find configuration file");
 
     commands
-        .merge(File::with_name("commands"))
+        .merge(ConfFile::with_name("commands"))
         .expect("Couldn't read or find commands file");
 
     // Twitch chat bot creates a connection initially

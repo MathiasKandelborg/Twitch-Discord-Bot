@@ -1,16 +1,12 @@
 #![deny(rust_2018_idioms, clippy::all, clippy::pedantic)]
 #![warn(clippy::nursery)]
-pub mod common_structs;
-
-pub mod channel_points_redemption;
-pub mod chat_command;
 pub mod discord;
-pub mod new_follower;
-pub mod parse_twitch_msg;
-pub mod send_msg;
+pub mod common_structs;
+pub use common_structs::*;
 pub mod twitch;
-pub mod twitch_chat_connect;
+pub use twitch::{chat_bot::*,topics_bot::*};
 
+use log::*;
 use rand::distributions::Alphanumeric;
 use rand::{thread_rng, Rng};
 

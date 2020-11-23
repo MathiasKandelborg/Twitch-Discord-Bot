@@ -1,16 +1,17 @@
-use crate::twitch::setup_socket;
 use native_tls::TlsStream;
 use std::env::var;
 use std::net::TcpStream;
 use std::time::{Duration, Instant};
 use tungstenite::stream::Stream;
 use tungstenite::{Message, WebSocket};
+use rand::{thread_rng, Rng};
+use log::*;
+
+use crate::common_structs::socket::setup_socket;
 pub mod parse_message;
 pub use parse_message::*;
 use parse_message::{Disconnected, Result};
-use rand::{thread_rng, Rng};
 
-use log::*;
 
 pub struct DiscordBot {
     pub bot_token: String,
@@ -38,7 +39,7 @@ impl DiscordBot {
         match self.socket.write_message(Message::Text(resume_msg)) {
             Err(err) => {
                 error!("Failed to write resume message:\n{}", err);
-              return Err(Disconnected);
+                return Err(Disconnected);
             }
 
             Ok(_) => {
@@ -86,7 +87,7 @@ impl DiscordBot {
                     error!("Failed to parse Discord msg");
                     return Err(Disconnected);
                 } else {
-                    error!("Discord msg parsing successful");
+                    info!("Discord msg parsing successful");
                     return Ok(());
                 }
             }
@@ -179,7 +180,7 @@ impl DiscordBot {
                         self.heartbeat_interval =
                             Duration::from_millis(hb_msg.d.heartbeat_interval);
 
-                        info!("Sending connect after receiving heartbeart");
+                        info!("Identifying with Discord after heartbeart");
 
                         self.socket
                             .write_message(Message::Text(connect_msg.to_string()))
